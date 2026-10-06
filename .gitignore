@@ -1,0 +1,6 @@
+# Large or reproducible trees: pinned in PINS.md, not committed
+/build/
+/deps/
+/src/
+/sdk/
+/test-content/
