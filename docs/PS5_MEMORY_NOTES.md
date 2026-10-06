@@ -55,3 +55,18 @@ Taken from Swordpdf/PS5SX2 (`deps/PS5SX2`, commit 9183fda) and mihawk-99's RPCS3
 
 The "PS5 has 16 GiB of shared GDDR" budget is the real ceiling: committed guest memory, JIT code and
 GPU allocations all come out of direct memory.
+
+## Thread-local storage (performance risk)
+
+- The SDK's `prospero-clang` wrapper always passes **`-femulated-tls`**. Every `thread_local` access
+  therefore goes through `__emutls_get_address`, a function call plus a lookup.
+- PR #19444 turns `vm::g_base_addr`, `g_sudo_addr`, `g_exec_addr`, `g_hook_addr`, `g_stat_addr`,
+  `g_vm_image`, `g_tls_locked` and `rsx::method_registers` into `thread_local` variables, and
+  `vm::_ptr`, `vm::_ref` and `vm::read/write` dereference `g_base_addr` on every guest access in
+  HLE, interpreter and RSX code. Recompiled PPU/SPU code takes the base from a register, so it is
+  less affected.
+- Options, to measure once the core runs:
+  1. Check whether native titles support real PT_TLS (the earlier libretro port lacked it only
+     because of its core loader). If they do, build RPCS3 without `-femulated-tls`.
+  2. Otherwise cache the bases in a per-thread structure that `cpu_thread` already carries, as
+     the prior-art spec suggests for `g_tls_this_thread` and `g_tls_locked`.
