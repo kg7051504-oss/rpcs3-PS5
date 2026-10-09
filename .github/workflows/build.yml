@@ -1,0 +1,27 @@
+name: Build PS5 App
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Arch Linux Build Environment
+        uses: uraimo/run-on-arch-action@v2
+        with:
+          arch: x86_64
+          distro: archlinux_latest
+          run: |
+            pacman -Syu --noconfirm
+            pacman -S --noconfirm git base-devel cmake python
+            chmod +x ./tools/bootstrap.sh
+            ./tools/bootstrap.sh
+
+      - name: Upload Finished PS5 App Folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpcs3-ps5-build
+          path: build/ # Adjust this if the output folder maps elsewhere
